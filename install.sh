@@ -9254,7 +9254,8 @@ shadowrocketRules() {
         return 1
     fi
     echoContent yellow "Shadowrocket: downloading and converting Clash Meta rule sets..."
-    if ! python3 "${helper}" --script "${BASH_SOURCE[0]}" --url "${configUrl}" \
+    # aliasInstall may move the running file; use the already-loaded template.
+    if ! declare -f clashMetaConfig | python3 "${helper}" --script - --url "${configUrl}" \
         --output "/etc/v2ray-agent/subscribe/clashMetaProfiles/shadowrocket.conf"; then
         rm -f "${helper}"
         echoContent red "Shadowrocket: generation failed; existing config unchanged."

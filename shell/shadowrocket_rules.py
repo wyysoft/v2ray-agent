@@ -6,12 +6,17 @@ import ipaddress
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 from urllib.request import Request, urlopen
 
 
 def template(text):
-    text = text.split('clashMetaConfig() {', 1)[1].split('\nEOF', 1)[0]
+    # Accept source syntax and Bash's `declare -f` formatting.
+    match = re.search(r'clashMetaConfig\s*\(\s*\)\s*\{', text)
+    if match is None:
+        raise ValueError('Clash Meta template function is missing')
+    text = text[match.end():].split('\nEOF', 1)[0]
     sections = {}
     section = None
     for line in text.splitlines():
@@ -168,15 +173,28 @@ def generate(script, url, loader=fetch):
     return '\n'.join(out) + '\n'
 
 
+def read_script(path, installed=Path('/etc/v2ray-agent/install.sh')):
+    if path == '-':
+        return sys.stdin.read()
+    try:
+        return Path(path).read_text(encoding='utf-8')
+    except FileNotFoundError:
+        # Compatibility with older callers: aliasInstall moves the running
+        # installer before its account menu uses the original BASH_SOURCE path.
+        if installed.is_file():
+            return installed.read_text(encoding='utf-8')
+        raise FileNotFoundError('Installer not found at %s or %s; update and reopen the installer.' % (path, installed)) from None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--script', required=True)
+    parser.add_argument('--script', required=True, help='Installer path, or - for a function definition on stdin')
     parser.add_argument('--url', required=True)
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
     if not re.fullmatch(r'https?://[^\s,]+', args.url):
         parser.error('Expected a HTTP(S) config URL')
-    content = generate(Path(args.script).read_text(), args.url)
+    content = generate(read_script(args.script), args.url)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(dir=output.parent, prefix='.shadowrocket-')

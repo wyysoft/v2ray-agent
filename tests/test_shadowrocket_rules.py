@@ -1,4 +1,5 @@
 import importlib.util
+import io
 from pathlib import Path
 import subprocess
 import tempfile
@@ -74,6 +75,38 @@ class ShadowrocketRulesTest(unittest.TestCase):
             self.assertIn('elif [[ "${manageAccountStatus}" == "6" ]]; then\n        shadowrocketRules', text)
             self.assertIn('shadowrocket://config/add/${configUrl}', text)
             self.assertIn('printf \'%s\' "${importUrl}" | qrencode', text)
+
+    def test_in_memory_template_survives_move_and_directory_change(self):
+        # Execute only the template definition, never installer top-level code.
+        start = self.script.index('clashMetaConfig() {')
+        end = self.script.index('\n}', start) + 2
+        definition = self.script[start:end]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / 'install.sh'
+            moved = root / 'installed.sh'
+            original.write_text(definition + '\nmv -- "$0" "$1"\ncd /\ndeclare -f clashMetaConfig\n')
+            result = subprocess.run(['bash', str(original), str(moved)], check=True, capture_output=True, text=True)
+            self.assertFalse(original.exists())
+            self.assertTrue(moved.exists())
+            with patch('sys.stdin', io.StringIO(result.stdout)):
+                memory = sr.read_script('-')
+            self.assertEqual(sr.template(memory), sr.template(self.script))
+            url = 'https://example.com/rules.conf'
+            self.assertEqual(sr.generate(memory, url, self.loader), sr.generate(self.script, url, self.loader))
+
+    def test_legacy_caller_falls_back_only_when_script_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory) / 'install.sh'
+            installed = Path(directory) / 'installed.sh'
+            installed.write_text(self.script)
+            self.assertEqual(sr.read_script(str(original), installed), self.script)
+            original.write_text('custom installer')
+            self.assertEqual(sr.read_script(str(original), installed), 'custom installer')
+            original.unlink()
+            installed.unlink()
+            with self.assertRaisesRegex(FileNotFoundError, 'update and reopen'):
+                sr.read_script(str(original), installed)
 
 
 if __name__ == '__main__':
