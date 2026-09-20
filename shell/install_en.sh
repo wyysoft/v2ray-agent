@@ -9252,19 +9252,19 @@ shadowrocketRules() {
     local helper
     helper=$(mktemp) || return 1
     if ! curl -fLsS --connect-timeout 10 --max-time 60 \
-        "https://raw.githubusercontent.com/wyysoft/v2ray-agent/0dcd0a7190ee3d8b73b646074c537b0a7476381e/shell/shadowrocket_rules.py" -o "${helper}"; then
+        "https://raw.githubusercontent.com/wyysoft/v2ray-agent/cec86755522bbffb0e0691c238eaca277fa1bf64/shell/shadowrocket_rules.py" -o "${helper}"; then
         rm -f "${helper}"
         echoContent red "Shadowrocket: converter download failed; existing config unchanged."
         return 1
     fi
     # Pin the converter to a reviewed revision; reject stale or modified downloads.
-    local converterSha="ee09d875d0dd44a70f69c85a1865f61ef30e132e317a0ff648881cd4240cda8f"
+    local converterSha="ebd226c50519af1abb29e76c52fd1b4df4da3191b410bcf9e15e40f95d898a8e"
     if ! printf '%s  %s\n' "${converterSha}" "${helper}" | sha256sum -c - >/dev/null 2>&1; then
         rm -f "${helper}"
         echoContent red "Shadowrocket: converter checksum mismatch; existing config unchanged."
         return 1
     fi
-    echoContent yellow "Shadowrocket: converter 0dcd0a7 verified."
+    echoContent yellow "Shadowrocket: converter cec8675 verified."
     echoContent yellow "Shadowrocket: downloading and converting Clash Meta rule sets..."
     # aliasInstall may move the running file; use the already-loaded template.
     if ! declare -f clashMetaConfig | python3 "${helper}" --script - --url "${configUrl}" \
@@ -9282,7 +9282,7 @@ shadowrocketRules() {
     printf '%s' "${importUrl}" | qrencode -s 6 -m 1 -t UTF8
     echoContent yellow "Rules only: import nodes separately, select this config, and use Configuration routing mode."
     echoContent yellow "To refresh: run this menu again, then update the remote config in Shadowrocket."
-    echoContent yellow "Clash desktop process rules are omitted on iOS. Rule data is a generated snapshot."
+    echoContent yellow "Compact config + remote rule sets; regenerate on server to refresh. iOS process rules omitted."
 }
 
 

@@ -57,6 +57,35 @@ class ShadowrocketRulesTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             sr.convert('UNSUPPORTED,test', 'classical')
 
+    def test_compaction_preserves_policy_boundaries_and_ip_options(self):
+        source = '[Rule]\n# one: https://example.com/a\nDOMAIN-SUFFIX,example.com,OpenAI\nDOMAIN,a.example.com,OpenAI\nDOMAIN-SUFFIX,example.com,OpenAI\nIP-CIDR,2001:db8::/32,OpenAI,no-resolve\n# two: https://example.com/b\nDOMAIN,a.example.com,DIRECT\nFINAL,DIRECT\n'
+        config, assets = sr.bundle(source, 'https://example.com/s/clashMetaProfiles/shadowrocket.conf')
+        self.assertEqual(len(assets), 2)
+        self.assertIn('DOMAIN-SUFFIX,example.com\nIP-CIDR,2001:db8::/32,no-resolve\n', assets.values())
+        self.assertIn('DOMAIN,a.example.com\n', assets.values())
+        self.assertTrue(config.endswith('FINAL,DIRECT\n'))
+        refs = [line for line in config.splitlines() if line.startswith('RULE-SET,')]
+        self.assertTrue(refs[0].endswith(',OpenAI'))
+        self.assertTrue(refs[1].endswith(',DIRECT'))
+        for ref in refs:
+            name = ref.split(',')[1].rsplit('/', 1)[1]
+            self.assertEqual(name, hashlib.sha256(assets[name].encode()).hexdigest() + '.list')
+
+    def test_bundle_matches_generated_snapshot(self):
+        original = sr.generate(self.script, 'https://example.com/rules.conf', self.loader)
+        config, assets = sr.bundle(original, 'https://example.com/rules.conf')
+        expanded = []
+        for line in config.split('[Rule]\n')[1].splitlines():
+            if line.startswith('RULE-SET,'):
+                _, url, policy = line.split(',')
+                for item in assets[url.rsplit('/', 1)[1]].splitlines():
+                    fields = item.split(',')
+                    expanded.append(','.join(fields[:2] + [policy] + fields[2:]))
+            elif line and not line.startswith('#'):
+                expanded.append(line)
+        expected = [line for line in original.split('[Rule]\n')[1].splitlines() if line and not line.startswith('#')]
+        self.assertEqual(expanded, expected)
+
     def test_failed_generation_preserves_previous_file(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'rules.conf'
@@ -68,7 +97,18 @@ class ShadowrocketRulesTest(unittest.TestCase):
             self.assertEqual(path.read_text(), 'previous config')
             with patch('sys.argv', argv), patch.object(sr, 'generate', return_value='new config'):
                 sr.main()
-            self.assertEqual(path.read_text(), 'new config')
+            self.assertEqual(path.read_text(), 'new config\n')
+
+    def test_asset_publish_failure_preserves_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'rules.conf'
+            path.write_text('previous config')
+            argv = ['converter', '--script', str(ROOT / 'install.sh'), '--url', 'https://example.com/rules.conf', '--output', str(path)]
+            generated = '[Rule]\n# test: https://example.com/source\nDOMAIN,example.com,PROXY\nFINAL,DIRECT\n'
+            with patch('sys.argv', argv), patch.object(sr, 'generate', return_value=generated), patch.object(sr, 'atomic_write', side_effect=OSError('disk full')):
+                with self.assertRaises(OSError):
+                    sr.main()
+            self.assertEqual(path.read_text(), 'previous config')
 
     def test_shell_syntax_and_menu_wiring(self):
         for name in ['install.sh', 'shell/install_en.sh']:
