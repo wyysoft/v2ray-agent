@@ -9042,6 +9042,7 @@ manageAccount() {
     echoContent yellow "3.管理其他订阅"
     echoContent yellow "4.添加用户"
     echoContent yellow "5.删除用户"
+    echoContent yellow "6.生成小火箭规则地址与二维码"
     echoContent red "=============================================================="
     read -r -p "请输入:" manageAccountStatus
     if [[ "${manageAccountStatus}" == "1" ]]; then
@@ -9054,6 +9055,8 @@ manageAccount() {
         addUser
     elif [[ "${manageAccountStatus}" == "5" ]]; then
         removeUser
+    elif [[ "${manageAccountStatus}" == "6" ]]; then
+        shadowrocketRules
     else
         echoContent red " ---> 选择错误"
     fi
@@ -9213,6 +9216,63 @@ addOtherSubscribe() {
     fi
 }
 # clashMeta配置文件
+
+# Generate a rules-only Shadowrocket configuration from the Clash Meta template.
+shadowrocketRules() {
+    installSubscribe
+    readNginxSubscribe
+    if [[ -z "${subscribePort}" ]]; then
+        echoContent red "Shadowrocket: subscription service is not configured."
+        return 1
+    fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        ${installType} python3 || return 1
+    fi
+    if ! command -v qrencode >/dev/null 2>&1; then
+        ${installType} qrencode || return 1
+    fi
+    local currentDomain="${subscribeDomain:-${currentHost}}"
+    if [[ "${subscribeType}" == "http" ]]; then
+        currentDomain="$(getPublicIP)"
+    fi
+    if [[ -z "${currentDomain}" ]]; then
+        echoContent red "Shadowrocket: subscription host is empty."
+        return 1
+    fi
+    if [[ "${currentDomain}" == *:* && "${currentDomain}" != \[*\] ]]; then
+        currentDomain="[${currentDomain}]"
+    fi
+    currentDomain="${currentDomain}:${subscribePort}"
+    # Reuse the existing nginx location; old installations need no migration.
+    local configUrl="${subscribeType}://${currentDomain}/s/clashMetaProfiles/shadowrocket.conf"
+    local helper
+    helper=$(mktemp) || return 1
+    if ! curl -fLsS --connect-timeout 10 --max-time 60 \
+        "https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/shell/shadowrocket_rules.py" -o "${helper}"; then
+        rm -f "${helper}"
+        echoContent red "Shadowrocket: converter download failed; existing config unchanged."
+        return 1
+    fi
+    echoContent yellow "Shadowrocket: downloading and converting Clash Meta rule sets..."
+    if ! python3 "${helper}" --script "${BASH_SOURCE[0]}" --url "${configUrl}" \
+        --output "/etc/v2ray-agent/subscribe/clashMetaProfiles/shadowrocket.conf"; then
+        rm -f "${helper}"
+        echoContent red "Shadowrocket: generation failed; existing config unchanged."
+        return 1
+    fi
+    rm -f "${helper}"
+    local importUrl="shadowrocket://config/add/${configUrl}"
+    echoContent skyBlue "\nShadowrocket .conf URL:"
+    echoContent yellow "${configUrl}"
+    echoContent skyBlue "\nShadowrocket import URL:"
+    echoContent yellow "${importUrl}"
+    printf '%s' "${importUrl}" | qrencode -s 6 -m 1 -t UTF8
+    echoContent yellow "Rules only: import nodes separately, select this config, and use Configuration routing mode."
+    echoContent yellow "To refresh: run this menu again, then update the remote config in Shadowrocket."
+    echoContent yellow "Clash desktop process rules are omitted on iOS. Rule data is a generated snapshot."
+}
+
+
 clashMetaConfig() {
     local url=$1
     local id=$2
