@@ -9393,6 +9393,21 @@ proxy-groups:
       - 自动选择
 
 
+  - name: Apple Intelligence
+    type: select
+    use:
+      - ${subscribeSalt}_provider
+    proxies:
+      - 手动切换
+      - 自动选择
+  - name: Siri
+    type: select
+    use:
+      - ${subscribeSalt}_provider
+    proxies:
+      - Apple Intelligence
+      - 手动切换
+      - 自动选择
   - name: OpenAI
     type: select
     use:
@@ -9448,6 +9463,18 @@ proxy-groups:
       - 手动切换
       - 自动选择
 rule-providers:
+  AppleIntelligence:
+    type: http
+    behavior: classical
+    url: https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/classical/apple-intelligence.yaml
+    path: ./ruleset/apple-intelligence.yaml
+    interval: 86400
+  Siri:
+    type: http
+    behavior: classical
+    url: https://gh-proxy.com/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Siri/Siri.yaml
+    path: ./ruleset/siri.yaml
+    interval: 86400
   lan:
     type: http
     behavior: classical
@@ -9581,6 +9608,9 @@ rule-providers:
     url: https://gh-proxy.com/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMax/ChinaMax_IP_No_IPv6.yaml
     path: ./Rules/ChinaMaxIPNoIPv6.yaml
 rules:
+  # Keep Apple AI/Siri ahead of generic proxy and China direct rules.
+  - RULE-SET,AppleIntelligence,Apple Intelligence
+  - RULE-SET,Siri,Siri
   - RULE-SET,YouTube,YouTube,no-resolve
   - RULE-SET,Google,Google,no-resolve
   - RULE-SET,GitHub,GitHub
