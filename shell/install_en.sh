@@ -9469,6 +9469,15 @@ proxy-groups:
     proxies:
       - 手动切换
       - 自动选择
+  - name: Apple Relay
+    type: select
+    use:
+      - ${subscribeSalt}_provider
+    proxies:
+      - Apple Intelligence
+      - 手动切换
+      - 自动选择
+      - DIRECT
   - name: Siri
     type: select
     use:
@@ -9532,6 +9541,12 @@ proxy-groups:
       - 手动切换
       - 自动选择
 rule-providers:
+  AppleRelay:
+    type: http
+    behavior: classical
+    url: https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/apple-relay.yaml
+    path: ./ruleset/apple-relay.yaml
+    interval: 86400
   AppleIntelligenceExtra:
     type: http
     behavior: classical
@@ -9690,6 +9705,7 @@ rule-providers:
     path: ./Rules/ChinaMaxIPNoIPv6.yaml
 rules:
   # Keep Apple AI/Siri ahead of generic proxy and China direct rules.
+  - RULE-SET,AppleRelay,Apple Relay
   - RULE-SET,AppleIntelligenceExtra,Apple Intelligence
   - RULE-SET,SiriExtra,Siri
   - RULE-SET,AppleIntelligence,Apple Intelligence

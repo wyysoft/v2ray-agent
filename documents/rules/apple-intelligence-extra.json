@@ -3,8 +3,7 @@
   "rules": [
     {
       "domain": [
-        "cp4.cloudflare.com",
-        "mask-api.icloud.com"
+        "cp4.cloudflare.com"
       ]
     }
   ]

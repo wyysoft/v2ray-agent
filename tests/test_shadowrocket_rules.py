@@ -1,5 +1,6 @@
 import importlib.util
 import hashlib
+import json
 import io
 import re
 from pathlib import Path
@@ -15,6 +16,35 @@ spec.loader.exec_module(sr)
 
 
 class ShadowrocketRulesTest(unittest.TestCase):
+    def test_apple_relay_is_separate_in_all_exports(self):
+        domains = {'mask-api.icloud.com', 'mask.icloud.com', 'mask-h2.icloud.com',
+                   'mask-api.fe.apple-dns.net', 'mask-t.apple-dns.net', 'mask.apple-dns.net'}
+        payload = (ROOT / 'documents/rules/apple-relay.yaml').read_text()
+        self.assertEqual(set(sr.payload(payload)), {'DOMAIN,' + d for d in domains})
+        self.assertNotIn('mask-api.icloud.com', (ROOT / 'documents/rules/apple-intelligence-extra.yaml').read_text())
+        group = next(g for g in self.groups if g['name'] == 'Apple Relay')
+        self.assertEqual(group['choices'][0], 'Apple Intelligence')
+        self.assertIn('DIRECT', group['choices'])
+        self.assertEqual(self.rules[0], 'RULE-SET,AppleRelay,Apple Relay')
+        def loader(url):
+            return payload if self.names[url] == 'AppleRelay' else self.loader(url)
+        conf = sr.generate(self.script, 'https://example.com/rules.conf', loader)
+        for domain in domains:
+            self.assertIn('DOMAIN,' + domain + ',Apple Relay\n', conf)
+        compact, assets = sr.bundle(conf, 'https://example.com/rules.conf')
+        self.assertIn(',Apple Relay\n', compact)
+        self.assertTrue(any(set(data.splitlines()) == {'DOMAIN,' + d for d in domains} for data in assets.values()))
+        sing = json.loads((ROOT / 'documents/sing-box.json').read_text())
+        self.assertEqual(set(json.loads((ROOT / 'documents/rules/apple-relay.json').read_text())['rules'][0]['domain']), domains)
+        self.assertIn('apple-relay', sing['dns']['rules'][2]['rule_set'])
+        self.assertEqual(next(g for g in sing['outbounds'] if g['tag'] == 'Apple Relay')['default'], 'Apple Intelligence')
+        rules = sing['route']['rules']
+        relay = next(i for i,r in enumerate(rules) if r.get('rule_set') == 'apple-relay')
+        apple = next(i for i,r in enumerate(rules) if r.get('rule_set') == 'geosite-apple')
+        self.assertLess(relay, apple)
+        self.assertEqual(rules[relay]['outbound'], 'Apple Relay')
+        self.assertTrue(any(r['tag'] == 'apple-relay' for r in sing['route']['rule_set']))
+
     def setUp(self):
         self.script = (ROOT / 'install.sh').read_text()
         self.groups, self.providers, self.rules = sr.template(self.script)

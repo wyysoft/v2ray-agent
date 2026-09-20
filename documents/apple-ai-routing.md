@@ -81,3 +81,40 @@ Regenerate full Clash/sing-box subscriptions with the updated installer, then
 refresh clients to install the new rule-set references. Remote lists update
 daily where configured. These additions are explicit user-requested routing
 overrides, not a claim that every listed host serves only Apple AI.
+
+## Apple Relay troubleshooting group
+
+A separate **Apple Relay** selector now handles these exact hosts:
+- `mask-api.icloud.com`
+- `mask.icloud.com`
+- `mask-h2.icloud.com`
+- `mask-api.fe.apple-dns.net`
+- `mask-t.apple-dns.net`
+- `mask.apple-dns.net`
+
+The three icloud.com hosts are listed as Private Relay endpoints by Apple:
+https://support.apple.com/en-us/101555
+The three apple-dns.net hosts are user-requested diagnostic additions from the
+reference screenshot; they are not asserted to be required for Siri.
+
+Apple Relay defaults to Apple Intelligence and also permits manual node selection
+or DIRECT for comparison. This supersedes the earlier assignment of
+mask-api.icloud.com to Apple Intelligence: it now belongs to Apple Relay only.
+Apple Intelligence's PCC/extension hosts remain in their existing group.
+Broad ls.apple.com, apps.mzstatic.com, gateway.icloud.com and keyword siri rules
+are not included in this group.
+
+Both Clash installers and sing-box have the selector and prioritized rule-set;
+sing-box DNS references it as well. Shadowrocket derives the same selector/rules
+from the Clash template without changing the pinned converter.
+
+Deploy the updated installer, regenerate full subscriptions (reuse Salt), and
+refresh clients. For Shadowrocket use account management option 6, then update
+the remote config and verify rule-set downloads. Merely updating an old rule list
+does not create the new selector or rule-set reference.
+
+For troubleshooting, select the same intended node for Apple Intelligence, Siri,
+Apple Relay and OpenAI, reproduce the failing request, then check connection
+logs for host, matched rule, actual outbound and errors. Compare Apple Relay's
+proxy versus DIRECT setting separately. This change supplies routing controls;
+it does not establish that routing caused the Siri failure.

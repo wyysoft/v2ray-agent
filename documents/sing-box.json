@@ -66,6 +66,7 @@
         "rule_set": [
           "geosite-apple-intelligence",
           "apple-intelligence-extra",
+          "apple-relay",
           "siri"
         ],
         "server": "dns_proxy"
@@ -164,6 +165,12 @@
     },
     {
       "type": "selector",
+      "tag": "Apple Relay",
+      "outbounds": ["Apple Intelligence", "手动切换", "自动选择", "direct"],
+      "default": "Apple Intelligence"
+    },
+    {
+      "type": "selector",
       "tag": "Siri",
       "outbounds": [
         "Apple Intelligence",
@@ -236,6 +243,13 @@
     "default_http_client": "rule_set_http",
     "default_domain_resolver": "local",
     "rule_set": [
+      {
+        "tag": "apple-relay",
+        "type": "remote",
+        "format": "source",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/apple-relay.json",
+        "update_interval": "1d"
+      },
       {
         "tag": "apple-intelligence-extra",
         "type": "remote",
@@ -456,6 +470,10 @@
       {
         "rule_set": "geosite-openai",
         "outbound": "OpenAI"
+      },
+      {
+        "rule_set": "apple-relay",
+        "outbound": "Apple Relay"
       },
       {
         "rule_set": ["geosite-apple-intelligence", "apple-intelligence-extra"],
