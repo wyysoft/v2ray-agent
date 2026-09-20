@@ -1,0 +1,4 @@
+# User-requested supplemental routing; smoot includes its subdomains.
+payload:
+  - DOMAIN,seed.siri.apple.com
+  - DOMAIN-SUFFIX,smoot.apple.com

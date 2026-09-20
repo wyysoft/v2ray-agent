@@ -9528,6 +9528,18 @@ proxy-groups:
       - 手动切换
       - 自动选择
 rule-providers:
+  AppleIntelligenceExtra:
+    type: http
+    behavior: classical
+    url: https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/apple-intelligence-extra.yaml
+    path: ./ruleset/apple-intelligence-extra.yaml
+    interval: 86400
+  SiriExtra:
+    type: http
+    behavior: classical
+    url: https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/siri-extra.yaml
+    path: ./ruleset/siri-extra.yaml
+    interval: 86400
   AppleIntelligence:
     type: http
     behavior: classical
@@ -9674,6 +9686,8 @@ rule-providers:
     path: ./Rules/ChinaMaxIPNoIPv6.yaml
 rules:
   # Keep Apple AI/Siri ahead of generic proxy and China direct rules.
+  - RULE-SET,AppleIntelligenceExtra,Apple Intelligence
+  - RULE-SET,SiriExtra,Siri
   - RULE-SET,AppleIntelligence,Apple Intelligence
   - RULE-SET,Siri,Siri
   - RULE-SET,YouTube,YouTube,no-resolve

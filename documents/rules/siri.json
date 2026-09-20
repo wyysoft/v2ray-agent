@@ -3,7 +3,13 @@
   "rules": [
     {
       "domain": [
-        "guzzoni.apple.com"
+        "guzzoni.apple.com",
+        "seed.siri.apple.com"
+      ]
+    },
+    {
+      "domain_suffix": [
+        "smoot.apple.com"
       ]
     }
   ]

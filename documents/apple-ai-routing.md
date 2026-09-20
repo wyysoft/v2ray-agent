@@ -63,3 +63,21 @@ Upstream author/project references, feedback links, third-party rule sources,
 and existing firewall identifiers remain unchanged.
 Install the fork's script explicitly once: an already installed upstream script
 still updates from upstream until replaced.
+
+## Supplemental rules requested from the reference screenshot
+
+These repository-maintained additions reproduce the user's requested routing:
+- Exact `seed.siri.apple.com` and suffix `smoot.apple.com` (including its subdomains) use Siri.
+- Exact `cp4.cloudflare.com` and `mask-api.icloud.com` use Apple Intelligence.
+
+Clash Meta references `siri-extra.yaml` and `apple-intelligence-extra.yaml` before
+general routing. Shadowrocket converts those same sources with the existing
+converter; regenerate its config on the server and refresh it in the app.
+sing-box includes the Siri additions in `siri.json` and loads
+`apple-intelligence-extra.json` alongside the upstream Apple Intelligence set;
+both DNS and route rules reference the supplemental set.
+
+Regenerate full Clash/sing-box subscriptions with the updated installer, then
+refresh clients to install the new rule-set references. Remote lists update
+daily where configured. These additions are explicit user-requested routing
+overrides, not a claim that every listed host serves only Apple AI.

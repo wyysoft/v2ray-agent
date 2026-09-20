@@ -65,6 +65,7 @@
         "action": "route",
         "rule_set": [
           "geosite-apple-intelligence",
+          "apple-intelligence-extra",
           "siri"
         ],
         "server": "dns_proxy"
@@ -235,6 +236,13 @@
     "default_http_client": "rule_set_http",
     "default_domain_resolver": "local",
     "rule_set": [
+      {
+        "tag": "apple-intelligence-extra",
+        "type": "remote",
+        "format": "source",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/apple-intelligence-extra.json",
+        "update_interval": "1d"
+      },
       {
         "tag": "geosite-apple-intelligence",
         "type": "remote",
@@ -450,7 +458,7 @@
         "outbound": "OpenAI"
       },
       {
-        "rule_set": "geosite-apple-intelligence",
+        "rule_set": ["geosite-apple-intelligence", "apple-intelligence-extra"],
         "outbound": "Apple Intelligence"
       },
       {
