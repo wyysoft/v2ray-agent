@@ -63,6 +63,14 @@
       },
       {
         "action": "route",
+        "rule_set": [
+          "geosite-apple-intelligence",
+          "siri"
+        ],
+        "server": "dns_proxy"
+      },
+      {
+        "action": "route",
         "rule_set": "geosite-cn",
         "server": "dns_direct"
       },
@@ -146,6 +154,25 @@
     },
     {
       "type": "selector",
+      "tag": "Apple Intelligence",
+      "outbounds": [
+        "手动切换",
+        "自动选择"
+      ],
+      "default": "手动切换"
+    },
+    {
+      "type": "selector",
+      "tag": "Siri",
+      "outbounds": [
+        "Apple Intelligence",
+        "手动切换",
+        "自动选择"
+      ],
+      "default": "Apple Intelligence"
+    },
+    {
+      "type": "selector",
       "tag": "Apple",
       "outbounds": [
         "手动切换",
@@ -208,6 +235,20 @@
     "default_http_client": "rule_set_http",
     "default_domain_resolver": "local",
     "rule_set": [
+      {
+        "tag": "geosite-apple-intelligence",
+        "type": "remote",
+        "format": "source",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/apple-intelligence.json",
+        "update_interval": "1d"
+      },
+      {
+        "tag": "siri",
+        "type": "remote",
+        "format": "source",
+        "url": "https://gh-proxy.com/https://raw.githubusercontent.com/wyysoft/v2ray-agent/master/documents/rules/siri.json",
+        "update_interval": "1d"
+      },
       {
         "tag": "geosite-category-ads-all",
         "type": "remote",
@@ -407,6 +448,14 @@
       {
         "rule_set": "geosite-openai",
         "outbound": "OpenAI"
+      },
+      {
+        "rule_set": "geosite-apple-intelligence",
+        "outbound": "Apple Intelligence"
+      },
+      {
+        "rule_set": "siri",
+        "outbound": "Siri"
       },
       {
         "rule_set": "geosite-apple",

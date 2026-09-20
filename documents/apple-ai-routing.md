@@ -1,4 +1,4 @@
-# Apple Intelligence and Siri routing (Clash Meta)
+# Apple Intelligence and Siri routing
 
 Both `install.sh` and `shell/install_en.sh` generate these rules for the full
 `/s/clashMetaProfiles/<id>` subscription.
@@ -28,7 +28,38 @@ Both `install.sh` and `shell/install_en.sh` generate these rules for the full
 Editing GitHub does not update an installed server or an existing client profile.
 After initial deployment, upstream rule-list contents refresh automatically;
 changes to groups or rule ordering require regenerating and refreshing the profile.
-Node-only subscriptions and sing-box configurations are outside this change.
+Node-only subscriptions do not carry routing rules.
 These community lists provide routing coverage, not a guarantee of complete
 coverage or Apple feature availability. Device/account/service eligibility and
 actual connectivity must still be checked on the device.
+
+## sing-box
+
+The full `/s/sing-box/<id>` subscription now downloads this fork's
+`documents/sing-box.json`. It has separate Apple Intelligence and Siri selectors,
+with Siri following Apple Intelligence by default. Their route rules precede
+the general Apple group and China direct rules. Their DNS matches use dns_proxy
+before the China DNS rule; explicit global/direct mode still takes precedence.
+
+Apple Intelligence uses MetaCubeX's remote source JSON:
+https://github.com/MetaCubeX/meta-rules-dat/blob/sing/geo/geosite/apple-intelligence.json
+
+Siri uses this fork's `documents/rules/siri.json`, a source-format equivalent
+of blackmatrix7's Siri rule (guzzoni.apple.com), checked on 2026-09-20:
+https://github.com/blackmatrix7/ios_rule_script/blob/master/rule/Clash/Siri/Siri.yaml
+This file is maintained in this repository, not automatically synchronized from
+blackmatrix7. Both remote sets are polled by the client every 1d; new Siri domains
+must first be added to this repository's JSON file.
+
+Regenerate subscriptions using the updated installer and previous Salt, then
+refresh the full sing-box subscription. Existing configs retain their old rules
+until refreshed. ChatGPT integration continues to use the OpenAI selector.
+
+## Fork download URLs
+
+Installer self-update, sing-box template downloads, bundled site assets, and
+documented installation/helper commands now use wyysoft/v2ray-agent.
+Upstream author/project references, feedback links, third-party rule sources,
+and existing firewall identifiers remain unchanged.
+Install the fork's script explicitly once: an already installed upstream script
+still updates from upstream until replaced.
