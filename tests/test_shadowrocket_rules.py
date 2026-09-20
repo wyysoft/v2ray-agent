@@ -1,5 +1,7 @@
 import importlib.util
+import hashlib
 import io
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -107,6 +109,23 @@ class ShadowrocketRulesTest(unittest.TestCase):
             installed.unlink()
             with self.assertRaisesRegex(FileNotFoundError, 'update and reopen'):
                 sr.read_script(str(original), installed)
+
+    def test_converter_is_pinned_and_stale_download_is_rejected(self):
+        script = (ROOT / 'install.sh').read_text()
+        self.assertRegex(script, r'v2ray-agent/[0-9a-f]{40}/shell/shadowrocket_rules.py')
+        expected = re.search(r'local converterSha="([0-9a-f]{64})"', script).group(1)
+        self.assertEqual(hashlib.sha256((ROOT / 'shell/shadowrocket_rules.py').read_bytes()).hexdigest(), expected)
+        start = script.index('    local converterSha=')
+        end = script.index('    echoContent yellow "Shadowrocket: converter ', start)
+        block = script[start:end]
+        with tempfile.TemporaryDirectory() as directory:
+            helper = Path(directory) / 'converter.py'
+            for body, success in [((ROOT / 'shell/shadowrocket_rules.py').read_bytes(), True), (b'old converter', False)]:
+                helper.write_bytes(body)
+                shell = 'echoContent() { :; }; check() { local helper="$1";\n' + block + '\n}; check "$1"'
+                result = subprocess.run(['bash', '-c', shell, 'test', str(helper)])
+                self.assertEqual(result.returncode == 0, success)
+                self.assertEqual(helper.exists(), success)
 
 
 if __name__ == '__main__':
